@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoulSynch - Match Minds, Not Faces</title>
+    
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0E0F12;
+            color: #EAECEF;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .logo {
+            font-size: 32px;
+            font-weight: 700;
+            color: #7C5CFF;
+            margin-bottom: 8px;
+        }
+
+        .tagline {
+            color: #A8B0BD;
+            font-size: 16px;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .auth-box {
+            background: #171A1F;
+            padding: 32px;
+            border-radius: 16px;
+            margin-top: 40px;
+        }
+
+        .auth-box h2 {
+            margin-bottom: 24px;
+            font-size: 24px;
+            text-align: center;
+        }
+
+        .social-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .btn-social {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 14px;
+            border: 1px solid #2A2D35;
+            border-radius: 8px;
+            background: #0E0F12;
+            color: #EAECEF;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-social:hover {
+            background: #1A1D23;
+            border-color: #3A3D45;
+            transform: translateY(-1px);
+        }
+
+        .btn-social svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #2A2D35;
+            border-top-color: #7C5CFF;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .profile-setup {
+            background: #171A1F;
+            padding: 32px;
+            border-radius: 16px;
+            margin-top: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #A8B0BD;
+            font-size: 14px;
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 14px;
+            background: #0E0F12;
+            border: 1px solid #2A2D35;
+            border-radius: 8px;
+            color: #EAECEF;
+            font-size: 16px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #7C5CFF;
+            color: #0E0F12;
+        }
+
+        .btn-primary:hover {
+            background: #6B4EE6;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #171A1F;
+            color: #EAECEF;
+            border: 1px solid #2A2D35;
+            margin-top: 12px;
+        }
+
+        .error {
+            background: #F0616E;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .success {
+            background: #37D39B;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .dashboard {
+            background: #171A1F;
+            padding: 32px;
+            border-radius: 16px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .user-info {
+            margin-bottom: 24px;
+            padding: 20px;
+            background: #0E0F12;
+            border-radius: 12px;
+        }
+
+        .credits-display {
+            font-size: 48px;
+            font-weight: 700;
+            color: #7C5CFF;
+            margin: 16px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">SoulSynch</div>
+            <div class="tagline">Match minds, not faces</div>
+        </div>
+
+        <div id="loadingPage" class="page active">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p style="color: #A8B0BD;">Initializing...</p>
+            </div>
+        </div>
+
+        <div id="loginPage" class="page">
+            <div class="auth-box">
+                <h2>Your Mind Missed You</h2>
+                <div id="errorMessage"></div>
+                
+                <div class="social-buttons">
+                    <button class="btn-social" onclick="signInWithGoogle()">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                        </svg>
+                        Continue with Google
+                    </button>
+                    
+                    <button class="btn-social" onclick="signInWithFacebook()">
+                        <svg viewBox="0 0 24 24" fill="#1877F2">
+                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                        </svg>
+                        Continue with Facebook
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="profilePage" class="page">
+            <div class="profile-setup">
+                <h2>Complete Your Profile</h2>
+                <div id="profileError"></div>
+                
+                <div class="input-group">
+                    <label>Display Name</label>
+                    <input type="text" id="displayName" placeholder="How should we call you?">
+                </div>
+
+                <div class="input-group">
+                    <label>Age Range</label>
+                    <select id="ageRange">
+                        <option>18-24</option>
+                        <option>25-34</option>
+                        <option>35-44</option>
+                        <option>45+</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>City</label>
+                    <input type="text" id="city" placeholder="Where are you based?">
+                </div>
+
+                <div class="input-group">
+                    <label>Bio (optional)</label>
+                    <input type="text" id="bio" placeholder="A few words about yourself...">
+                </div>
+
+                <button class="btn btn-primary" onclick="saveProfile()">Continue</button>
+            </div>
+        </div>
+
+        <div id="dashboardPage" class="page">
+            <div class="dashboard">
+                <h2>Welcome to SoulSynch!</h2>
+                <div class="user-info">
+                    <p style="color: #A8B0BD; margin-bottom: 8px;">Logged in as</p>
+                    <p id="userEmail" style="font-size: 18px; font-weight: 600;"></p>
+                    <p style="color: #A8B0BD; margin-top: 16px;">Your Credits</p>
+                    <div class="credits-display" id="creditsDisplay">5</div>
+                </div>
+                
+                <div id="dashSuccess"></div>
+                
+                <p style="color: #A8B0BD; margin-bottom: 24px; line-height: 1.6;">
+                    🎉 Your account is set up! OAuth authentication is working perfectly.
+                    <br><br>
+                    Next steps: Upload your ChatGPT conversations to find matches!
+                </p>
+                
+                <button class="btn btn-primary" onclick="alert('Upload feature coming next!')">
+                    Upload ChatGPT Data
+                </button>
+                
+                <button class="btn btn-secondary" onclick="signOut()">
+                    Sign Out
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://njhvrmwwcomcvfhmgkgt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5qaHZybXd3Y29tY3ZmaG1na2d0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzNTUxNzcsImV4cCI6MjA3NzkzMTE3N30.9omPfgcLg2-C3Mkwf5lpedZsvBkEL5mJDX3SMsNyQhE';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentUser = null;
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        function showError(elementId, message) {
+            const el = document.getElementById(elementId);
+            el.innerHTML = `<div class="error">${message}</div>`;
+            setTimeout(() => el.innerHTML = '', 5000);
+        }
+
+        function showSuccess(elementId, message) {
+            const el = document.getElementById(elementId);
+            el.innerHTML = `<div class="success">${message}</div>`;
+        }
+
+        async function checkAuth() {
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            if (session) {
+                currentUser = session.user;
+                await checkProfile();
+            } else {
+                showPage('loginPage');
+            }
+        }
+
+        async function checkProfile() {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', currentUser.id)
+                .single();
+
+            if (error || !data) {
+                showPage('profilePage');
+            } else {
+                document.getElementById('userEmail').textContent = currentUser.email;
+                document.getElementById('creditsDisplay').textContent = data.credits_balance || 5;
+                showPage('dashboardPage');
+            }
+        }
+
+        async function signInWithGoogle() {
+            try {
+                const { data, error } = await supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        redirectTo: 'https://unrivaled-capybara-ac1fcf.netlify.app'
+                    }
+                });
+
+                if (error) throw error;
+            } catch (error) {
+                console.error('Google sign in error:', error);
+                showError('errorMessage', 'Failed to sign in with Google. Please try again.');
+            }
+        }
+
+        async function signInWithFacebook() {
+            try {
+                const { data, error } = await supabase.auth.signInWithOAuth({
+                    provider: 'facebook',
+                    options: {
+                        redirectTo: 'https://unrivaled-capybara-ac1fcf.netlify.app'
+                    }
+                });
+
+                if (error) throw error;
+            } catch (error) {
+                console.error('Facebook sign in error:', error);
+                showError('errorMessage', 'Failed to sign in with Facebook. Please try again.');
+            }
+        }
+
+        async function saveProfile() {
+            const displayName = document.getElementById('displayName').value;
+            const ageRange = document.getElementById('ageRange').value;
+            const city = document.getElementById('city').value;
+            const bio = document.getElementById('bio').value;
+
+            if (!displayName || !city) {
+                showError('profileError', 'Please fill in all required fields');
+                return;
+            }
+
+            try {
+                const { error } = await supabase
+                    .from('profiles')
+                    .insert({
+                        id: currentUser.id,
+                        display_name: displayName,
+                        age_range: ageRange,
+                        city: city,
+                        bio: bio,
+                        login_method: currentUser.app_metadata.provider,
+                        credits_balance: 5
+                    });
+
+                if (error) throw error;
+
+                showSuccess('profileError', '✓ Profile created!');
+                setTimeout(() => checkProfile(), 1000);
+            } catch (error) {
+                console.error('Profile save error:', error);
+                showError('profileError', 'Failed to save profile. Please try again.');
+            }
+        }
+
+        async function signOut() {
+            await supabase.auth.signOut();
+            currentUser = null;
+            showPage('loginPage');
+        }
+
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN') {
+                currentUser = session.user;
+                checkProfile();
+            } else if (event === 'SIGNED_OUT') {
+                currentUser = null;
+                showPage('loginPage');
+            }
+        });
+
+        window.addEventListener('load', () => {
+            checkAuth();
+        });
+    </script>
+</body>
+</html>
